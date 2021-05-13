@@ -6,6 +6,7 @@ contract AssetHolder {
     struct Asset {
         string name;
         uint256 id;
+        uint256 procedure;
     }
   
 }
