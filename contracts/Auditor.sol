@@ -11,4 +11,6 @@ contract Auditor {
         
     }
 
+    function castVote()
+
 }
