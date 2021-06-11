@@ -18,6 +18,9 @@ contract AssetHolder {
     address public auditor;
     address public tokenizedAsset;
     AssetDescriptor public descriptor;
+    AuditResult public latestAudit;
+
+    event AuditPerformed(bool assetVerified);
 
     modifier onlyAuditor() {
         require(
@@ -31,15 +34,15 @@ contract AssetHolder {
         string memory _name,
         uint256 _id,
         uint256 _procedure,
-        address _tokenizedAsset,
-        address _auditor
+        address _tokenizedAsset
     ) {
         tokenizedAsset = _tokenizedAsset;
         descriptor = AssetDescriptor(_name, _id, _procedure);
     }
 
-    function performAudit() external onlyAuditor {
-        
+    function performAudit(bool assetVerified, string memory additionalInfo) external onlyAuditor {
+        latestAudit = AuditResult(assetVerified, additionalInfo, block.timestamp);
+        emit AuditPerformed(assetVerified);
     }
   
 }
