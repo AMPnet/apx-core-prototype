@@ -5,34 +5,21 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract APXCoordinator is Ownable {
 
-    struct AssetCategory {
-        uint256 categoryId;
-        string categoryDescriptionIPFS;
-        bool active;
-    }
-
-    mapping(uint256 => AssetCategory) public categories;
     address public arbitersCommittee;
+    address public nposAuditorPool;
+    address public auditingProcedures;
+    address public assetList;
 
-    constructor(address _arbitersCommittee) {
+    constructor(
+        address _arbitersCommittee,
+        address _nposAuditorPool,
+        address _auditingProcedures,
+        address _assetList
+    ) {
         arbitersCommittee = _arbitersCommittee;
-    }
-
-    function addAssetCategory(uint256 categoryId, string memory categoryDescriptionIPFS) external onlyOwner {
-        require(
-            categoryId > 0,
-            "New Asset category must have a unique id > 0");
-        require(
-            categories[categoryId].categoryId == 0,
-            "Asset category with given id already exits"
-        );
-
-        categories[categoryId] = AssetCategory(categoryId, categoryDescriptionIPFS, false);
-
-    }
-
-    function suspendAssetCategory(uint256 categoryId) external onlyOwner {
-        categories[categoryId].active = false;
+        nposAuditorPool = _nposAuditorPool;
+        auditingProcedures = _auditingProcedures;
+        assetList = _assetList;
     }
 
 }
