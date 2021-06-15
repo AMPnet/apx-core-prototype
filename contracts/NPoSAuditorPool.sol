@@ -5,7 +5,6 @@ import "./interfaces/IAuditorPool.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-
 contract NPoSAuditorPool is IAuditorPool, Ownable {
 
     struct Council {
@@ -31,25 +30,27 @@ contract NPoSAuditorPool is IAuditorPool, Ownable {
     mapping(address => MemberInfo) _members;
     address[] _qualifiedMembers;
 
-    uint256 _minimumPersonalStake;
-    uint256 _maxNumberOfAuditors;
+    uint256 _minPersonalStake;
     uint256 _minStakeToQualify;
+    uint256 _maxNumberOfAuditors;
 
     mapping(address => Nomination[]) _nominations;
 
     constructor(
-        IERC20 stakingToken,
-        uint256 minimumPersonalStake,
+        address stakingToken,
+        uint256 minPersonalStake,
+        uint256 minStakeToQualify,
         uint256 maxNumberOfAuditors
     ) Ownable() {
-        _stakingToken = stakingToken;
-        _minimumPersonalStake = minimumPersonalStake;
+        _stakingToken = IERC20(stakingToken);
+        _minPersonalStake = minPersonalStake;
+        _minStakeToQualify = minStakeToQualify;
         _maxNumberOfAuditors = maxNumberOfAuditors;
     }
 
     function applyForMembership(uint256 stakeAmount) public {
         require(!_members[msg.sender].hasApplied);
-        require(stakeAmount > _minimumPersonalStake);
+        require(stakeAmount > _minPersonalStake);
 
         _stakingToken.transferFrom(msg.sender, address(this), stakeAmount);
 

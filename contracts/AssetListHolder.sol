@@ -8,8 +8,7 @@ import "./AssetHolder.sol";
 contract AssetListHolder is Ownable, IAssetListHolder {
 
     address public apxCoordinator;
-
-    address[] public assets;
+    address[] public override assets;
 
     constructor(address _apxCoordinator) {
         apxCoordinator = _apxCoordinator;
@@ -27,14 +26,16 @@ contract AssetListHolder is Ownable, IAssetListHolder {
 
     function addAsset(
         string memory name,
-        uint256 id,
+        uint256 assetId,
         uint256 procedureId,
+        uint256 auditorPoolId,
         address tokenizedAsset,
         string memory additionalInfo
     ) external override onlyApxCoordinator {
         AssetHolder assetHolder = new AssetHolder(
             name,
-            id,
+            assetId,
+            auditorPoolId,
             procedureId,
             tokenizedAsset
         );

@@ -1,25 +1,20 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-contract AssetHolder {
-  
-    struct AssetDescriptor {
-        string name;
-        uint256 id;
-        uint256 procedure;
-    }
-    
-    struct AuditResult {
-        bool assetVerified;
-        string additionalInfo;
-        uint256 timestamp;
-    }
+import "@openzeppelin/"
+import "./interfaces/IAssetHolder.sol";
+import { AssetDescriptor, AuditResult } from "./shared/Structs.sol";
 
-    address public auditor;
+contract AssetHolder is IAssetHolder {
+  
     address public tokenizedAsset;
     AssetDescriptor public descriptor;
     AuditResult public latestAudit;
 
+    bool public auditInProgress;
+    uint256 public auditStartedTimestamp;
+
+    event AuditStarted()
     event AuditPerformed(bool assetVerified);
 
     modifier onlyAuditor() {
@@ -32,17 +27,28 @@ contract AssetHolder {
 
     constructor(
         string memory _name,
-        uint256 _id,
-        uint256 _procedure,
+        uint256 _assetId,
+        uint256 _auditorPoolId,
+        uint256 _procedureId,
         address _tokenizedAsset
     ) {
         tokenizedAsset = _tokenizedAsset;
-        descriptor = AssetDescriptor(_name, _id, _procedure);
+        descriptor = AssetDescriptor(_name, _assetId, _auditorPoolId, _procedureId);
     }
+
+    function startAudit() external  {}
 
     function performAudit(bool assetVerified, string memory additionalInfo) external onlyAuditor {
         latestAudit = AuditResult(assetVerified, additionalInfo, block.timestamp);
         emit AuditPerformed(assetVerified);
     }
-  
+
+    function getLatestAudit() external override view returns (AuditResult memory) {
+        return latestAudit;    
+    }
+
+    function getDescriptor() external override view returns (AssetDescriptor memory) {
+        return descriptor;
+    }
+
 }
