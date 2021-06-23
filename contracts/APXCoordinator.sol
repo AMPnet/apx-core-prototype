@@ -18,38 +18,23 @@ contract APXCoordinator is Ownable {
 
     // ASSETTYPE-TO-POOL HOLDER
     mapping(uint256 => uint256) public assetTypeToPool;
-    
+
+    // ASSETS
     address public assetListHolder;
-    address public stakingToken;
 
     // PROTOCOL PROPERTIES
     uint256 public auditGapDuration;
-    uint256 public auditDuration;
-    uint256 public councilSize;
-    uint256 public minPersonalStake;
-    uint256 public minStakeToQualify;
-    uint256 public maxNumberOfAuditors;
+    uint256 public aapxPerAudit;
+    uint256 public aapxPerList;
 
     event AssetListed(address indexed tokenizedAsset);
 
     constructor(
         address _assetListHolder,
-        uint256 _auditGapDuration,
-        uint256 _auditDuration,
-        uint256 _councilSize,
-        uint256 _minPersonalStake,
-        uint256 _minStakeToQualify,
-        uint256 _maxNumberOfAuditors,
-        address _stakingToken
+        uint256 _auditGapDuration
     ) {
         assetListHolder = _assetListHolder;
         auditGapDuration = _auditGapDuration;
-        auditDuration = _auditDuration;
-        councilSize = _councilSize;
-        minPersonalStake = _minPersonalStake;
-        minStakeToQualify = _minStakeToQualify;
-        maxNumberOfAuditors = _maxNumberOfAuditors;
-        stakingToken = _stakingToken;
     }
 
     modifier auditorEligibleForAssetType(uint256 typeId) {
