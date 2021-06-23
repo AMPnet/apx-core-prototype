@@ -8,7 +8,7 @@ import "./AssetHolder.sol";
 contract AssetListHolder is Ownable, IAssetListHolder {
 
     address public apxCoordinator;
-    address[] public override assetsList;
+    address[] public override assets;
 
     constructor(address _apxCoordinator) {
         apxCoordinator = _apxCoordinator;
@@ -19,33 +19,37 @@ contract AssetListHolder is Ownable, IAssetListHolder {
     modifier onlyApxCoordinator() {
         require(
             msg.sender == apxCoordinator,
-            "Only APX Coordinator is allowed to execute call."
+            "Only Coordinator Contract is allowed to execute call."
         );
         _;
     }
 
-    /*
-        address tokenizedAsset,
-        string memory name,
-        string memory info,
-        string memory listingInfo
-    */
-
     function addAsset(
         address tokenizedAsset,
+        address listedBy,
+        uint256 assetType,
         string memory name,
         string memory info,
         string memory listingInfo
-    ) external override onlyApxCoordinator {
+    ) external override onlyApxCoordinator returns (uint256) {
+        uint256 assetId = assets.length;
         AssetHolder assetHolder = new AssetHolder(
-            name,
+            msg.sender,
+            tokenizedAsset,
+            listedBy,
             assetId,
-            auditorPoolId,
-            procedureId,
-            tokenizedAsset
+            assetType,
+            name,
+            info,
+            listingInfo
         );
         assets.push(address(assetHolder));
         emit AssetHolderCreated(address(assetHolder), tokenizedAsset);
+        return assetId;
+    }
+
+    function getAssets() external view override returns (address[] memory) {
+        return assets;
     }
 
 }

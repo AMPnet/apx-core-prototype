@@ -1,11 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-struct AssetDescriptor {
-    uint256 id;
-    uint256 auditorPoolId;
-}
-
 struct AssetType {
     uint256 id;
     string name;

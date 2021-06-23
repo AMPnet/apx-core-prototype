@@ -4,14 +4,10 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IAssetListHolder.sol";
 import "./interfaces/IAssetHolder.sol";
-import "./interfaces/IAuditorPoolFactory.sol";
 import "./interfaces/IAuditorPool.sol";
 import "./shared/Structs.sol";
 
 contract APXCoordinator is Ownable {
-
-    // FACTORIES
-    address public auditorPoolFactory;
 
     // ASSET TYPES
     AssetType[] public assetTypesList;
@@ -22,7 +18,7 @@ contract APXCoordinator is Ownable {
 
     // ASSETTYPE-TO-POOL HOLDER
     mapping(uint256 => uint256) public assetTypeToPool;
-
+    
     address public assetListHolder;
     address public stakingToken;
 
@@ -44,8 +40,7 @@ contract APXCoordinator is Ownable {
         uint256 _minPersonalStake,
         uint256 _minStakeToQualify,
         uint256 _maxNumberOfAuditors,
-        address _stakingToken,
-        address _auditorPoolFactory
+        address _stakingToken
     ) {
         assetListHolder = _assetListHolder;
         auditGapDuration = _auditGapDuration;
@@ -55,6 +50,25 @@ contract APXCoordinator is Ownable {
         minStakeToQualify = _minStakeToQualify;
         maxNumberOfAuditors = _maxNumberOfAuditors;
         stakingToken = _stakingToken;
+    }
+
+    modifier auditorEligibleForAssetType(uint256 typeId) {
+        uint256 poolId = assetTypeToPool[typeId];
+        AuditorPool storage pool = auditorPools[poolId];
+        Auditor storage auditor = pool.auditors[msg.sender];
+        require(
+            pool.active,
+            "Pool not active."
+        );
+        require(
+            auditor.registered,
+            "Auditor not registered in this pool."
+        );
+        require(
+            auditor.active,
+            "Auditor not active in this pool."
+        );
+        _;
     }
 
     function createNewAssetType(
@@ -120,36 +134,45 @@ contract APXCoordinator is Ownable {
     }
 
     function listAsset(
-        uint256 assetTypeId,
         address tokenizedAsset,
+        uint256 typeId,
         string memory name,
         string memory info,
         string memory listingInfo
-    ) external {
+    ) external auditorEligibleForAssetType(typeId) {
         IAssetListHolder(assetListHolder).addAsset(
-            name,
-            assetId,
-            procedureId,
-            auditorPoolId,
             tokenizedAsset,
-            additionalInfo
-        );
-        emit AssetListed(tokenizedAsset);
+            msg.sender,
+            typeId,
+            name,
+            info,
+            listingInfo
+        );        
     }
 
-    function startAudit(uint256 assetIndex) external {
-        IAssetHolder asset = IAssetHolder(IAssetListHolder(assetListHolder).assets(assetIndex));
-        uint256 lastAuditTimestamp = asset.getLatestAudit().timestamp;
-        uint256 auditorPoolId = asset.getDescriptor().auditorPoolId;
-        
+    function performAudit(
+        uint256 assetId,
+        bool assetValid,
+        string memory additionalInfo
+    ) external auditorEligibleForAssetType(getAssetByAssetId(assetId).typeId()) {
+        IAssetHolder asset = getAssetByAssetId(assetId);
+        Auditor storage auditor = getCallerAuditorByAssetId(assetId);
         require(
-            lastAuditTimestamp == 0 || ((block.timestamp - lastAuditTimestamp) >= auditGapDuration),
-            "Asset not ready for audit."  
+            (block.timestamp - asset.getLatestAudit().timestamp) >= auditGapDuration,
+            "New audit not yet required."
         );
-        require(
-            
-        );
-        uint256 councilId = IAuditorPool(auditorPools[auditorPoolId]).requestCouncil(councilSize);
+        asset.performAudit(assetValid, additionalInfo);
+        auditor.totalAuditsPerformed += 1;
+    }
+
+    function getCallerAuditorByAssetId(uint256 assetId) private view returns (Auditor storage) {
+        return auditorPools[
+            getAssetByAssetId(assetId).typeId()
+        ].auditors[msg.sender];
+    }
+
+    function getAssetByAssetId(uint256 assetId) private view returns (IAssetHolder) {
+        return IAssetHolder(IAssetListHolder(assetListHolder).assets(assetId));
     }
 
 }
