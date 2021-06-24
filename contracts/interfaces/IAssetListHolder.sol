@@ -7,6 +7,7 @@ interface IAssetListHolder {
         address listedBy,
         uint256 assetType,
         string memory name,
+        string memory ticker,
         string memory info,
         string memory listingInfo
     ) external returns (uint256);

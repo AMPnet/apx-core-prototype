@@ -123,6 +123,7 @@ contract APXCoordinator is Ownable {
         address tokenizedAsset,
         uint256 typeId,
         string memory name,
+        string memory ticker,
         string memory info,
         string memory listingInfo
     ) external auditorEligibleForAssetType(typeId) {
@@ -131,6 +132,7 @@ contract APXCoordinator is Ownable {
             msg.sender,
             typeId,
             name,
+            ticker,
             info,
             listingInfo
         );        

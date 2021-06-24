@@ -29,6 +29,7 @@ contract AssetListHolder is Ownable, IAssetListHolder {
         address listedBy,
         uint256 assetType,
         string memory name,
+        string memory ticker,
         string memory info,
         string memory listingInfo
     ) external override onlyApxCoordinator returns (uint256) {
@@ -40,6 +41,7 @@ contract AssetListHolder is Ownable, IAssetListHolder {
             assetId,
             assetType,
             name,
+            ticker,
             info,
             listingInfo
         );

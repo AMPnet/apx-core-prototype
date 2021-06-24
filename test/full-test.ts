@@ -23,7 +23,8 @@ describe("Full test", function () {
             3) create one AuditorPool\n
             4) add one Auditor to the AuditorPool\n
             5) Auditor lists the tokenized Asset\n
-            6) Auditor audits the tokenized Asset once
+            6) Auditor audits the tokenized Asset once\n
+            7) Shareholder mirrors his tokens to AAPX core
         `,
         async function () {
             const assetListHolder: Contract = await (await ethers.getContractFactory("AssetListHolder", deployer)).deploy();
@@ -42,6 +43,7 @@ describe("Full test", function () {
                 tokenizedAsset.address,
                 0,
                 "Mirrored Tokenized asset",
+                "MTA",
                 "info-ipfs-hash",
                 "listing-info-ipfs-hash"
             );
@@ -63,6 +65,12 @@ describe("Full test", function () {
             expect(pool.id).to.be.equal(0);
             expect(pool.active).to.be.true;
             expect(pool.activeMembers).to.be.equal(1);
+
+            const sharesToMirror = ethers.utils.parseEther("1");
+            await tokenizedAsset.connect(deployer).approve(asset.address, sharesToMirror);
+            await asset.connect(deployer).claim();
+            const mirroredShares = await asset.balanceOf(await deployer.getAddress());
+            expect(mirroredShares).to.be.equal(sharesToMirror);
         }
     )
 
