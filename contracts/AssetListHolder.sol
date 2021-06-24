@@ -10,10 +10,6 @@ contract AssetListHolder is Ownable, IAssetListHolder {
     address public apxCoordinator;
     address[] public override assets;
 
-    constructor(address _apxCoordinator) {
-        apxCoordinator = _apxCoordinator;
-    }
-
     event AssetHolderCreated(address indexed holderAddress, address indexed tokenizedAssetAddress);
 
     modifier onlyApxCoordinator() {
@@ -22,6 +18,10 @@ contract AssetListHolder is Ownable, IAssetListHolder {
             "Only Coordinator Contract is allowed to execute call."
         );
         _;
+    }
+
+    function setCoordinator(address coordinator) external {
+        apxCoordinator = coordinator;
     }
 
     function addAsset(

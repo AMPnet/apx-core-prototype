@@ -107,6 +107,7 @@ contract APXCoordinator is Ownable {
         if (pool.auditorsList.length > 0) {
             pool.active = true;
         }
+        pool.activeMembers += 1;
         return true;
     }
 
