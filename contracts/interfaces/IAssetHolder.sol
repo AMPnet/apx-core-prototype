@@ -6,6 +6,7 @@ import { AuditResult } from "../shared/Structs.sol";
 interface IAssetHolder {
     function id() external view returns (uint256);
     function typeId() external view returns (uint256);
+    function tokenizedAsset() external view returns (address);
     function getLatestAudit() external view returns (AuditResult memory);
     function performAudit(bool assetVerified, string memory additionalInfo) external;
 }

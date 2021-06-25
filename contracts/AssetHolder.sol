@@ -13,7 +13,7 @@ contract AssetHolder is IAssetHolder, ERC20 {
     uint256 public override id;
     uint256 public override typeId;
     string public info;
-    IERC20 public tokenizedAsset;
+    address public override tokenizedAsset;
     address public listedBy;
     string public listingInfo;
     AuditResult public latestAudit;
@@ -43,16 +43,17 @@ contract AssetHolder is IAssetHolder, ERC20 {
         id = _id;
         typeId = _typeId;
         info = _info;
-        tokenizedAsset = IERC20(_tokenizedAsset);
+        tokenizedAsset = _tokenizedAsset;
         listedBy = _listedBy;
         listingInfo = _listingInfo;
-        _mint(address(this), tokenizedAsset.totalSupply());   
+        _mint(address(this), IERC20(tokenizedAsset).totalSupply());   
     }
 
     function claim() external returns (bool) {
-        uint256 allowance = tokenizedAsset.allowance(msg.sender, address(this));
+        IERC20 asset = IERC20(tokenizedAsset);
+        uint256 allowance = asset.allowance(msg.sender, address(this));
         require(allowance > 0, "Not allowed to spend tokenized asset tokens.");
-        tokenizedAsset.safeTransferFrom(msg.sender, address(this), allowance);
+        asset.safeTransferFrom(msg.sender, address(this), allowance);
         _transfer(address(this), msg.sender, allowance);
         return true;
     }

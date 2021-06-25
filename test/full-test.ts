@@ -7,12 +7,14 @@ describe("Full test", function () {
 
     let deployer: Signer;
     let auditor: Signer;
+    let usdc: Contract;
     let tokenizedAsset: Contract;
 
     this.beforeEach(async function () {
         const accounts: Signer[] = await ethers.getSigners();
         deployer = accounts[0];
         auditor = accounts[1];
+        usdc = await helpers.deployToken(deployer, "7000000");
         tokenizedAsset = await helpers.deployToken(deployer, "70000000");
     });
 
@@ -29,15 +31,22 @@ describe("Full test", function () {
         async function () {
             const assetListHolder: Contract = await (await ethers.getContractFactory("AssetListHolder", deployer)).deploy();
             const apxCoordinator: Contract = await (await ethers.getContractFactory("APXCoordinator", deployer)).deploy(
-                assetListHolder.address, 1
+                assetListHolder.address,
+                usdc.address,
+                1
             );
             const auditorAddress = await auditor.getAddress();
-
+        
             await assetListHolder.setCoordinator(apxCoordinator.address);
+            await apxCoordinator.setStablecoin(usdc.address);
             await apxCoordinator.createNewAuditorPool("Berlin Real Estate - 1", "ipfs-hash");
             await apxCoordinator.createNewAssetType("Berlin Real Estate - 1", "ipfs-hash");
             await apxCoordinator.addAuditorToPool(0, auditorAddress, "auditor-info-ipfs-hash");
             await apxCoordinator.assignAssetTypeToPool(0, 0);
+
+            const tokenizedAssetFunds = ethers.utils.parseEther("20");
+            await usdc.approve(tokenizedAsset.address, tokenizedAssetFunds);
+            await tokenizedAsset.fundWallet(usdc.address, tokenizedAssetFunds, apxCoordinator.address);
             
             await apxCoordinator.connect(auditor).listAsset(
                 tokenizedAsset.address,
@@ -71,6 +80,9 @@ describe("Full test", function () {
             await asset.connect(deployer).claim();
             const mirroredShares = await asset.balanceOf(await deployer.getAddress());
             expect(mirroredShares).to.be.equal(sharesToMirror);
+
+            const auditorBalance = await usdc.balanceOf(auditorAddress);
+            expect(auditorBalance).to.be.equal(ethers.utils.parseEther("20"));
         }
     )
 

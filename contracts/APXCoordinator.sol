@@ -1,6 +1,8 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IAssetListHolder.sol";
 import "./interfaces/IAssetHolder.sol";
@@ -8,6 +10,7 @@ import "./interfaces/IAuditorPool.sol";
 import "./shared/Structs.sol";
 
 contract APXCoordinator is Ownable {
+    using SafeERC20 for IERC20;
 
     // ASSET TYPES
     AssetType[] public assetTypesList;
@@ -23,17 +26,21 @@ contract APXCoordinator is Ownable {
     address public assetListHolder;
 
     // PROTOCOL PROPERTIES
+    IERC20 public stablecoin;
     uint256 public auditGapDuration;
-    uint256 public aapxPerAudit;
-    uint256 public aapxPerList;
+    uint256 public usdcPerAudit = 10 * (10**18);
+    uint256 public usdcPerList = 10 * (10**18);
+    uint256 public protocolFeePercentage = 3;
 
     event AssetListed(address indexed tokenizedAsset);
 
     constructor(
         address _assetListHolder,
+        IERC20 _stablecoin,
         uint256 _auditGapDuration
     ) {
         assetListHolder = _assetListHolder;
+        stablecoin = _stablecoin;
         auditGapDuration = _auditGapDuration;
     }
 
@@ -127,6 +134,12 @@ contract APXCoordinator is Ownable {
         string memory info,
         string memory listingInfo
     ) external auditorEligibleForAssetType(typeId) {
+        IERC20 stablecoinToken = IERC20(stablecoin);
+        require(
+            stablecoinToken.balanceOf(tokenizedAsset) >= usdcPerList,
+            "Asset balance too low to list."
+        );
+        stablecoinToken.safeTransferFrom(tokenizedAsset, msg.sender, usdcPerList);
         IAssetListHolder(assetListHolder).addAsset(
             tokenizedAsset,
             msg.sender,
@@ -135,7 +148,7 @@ contract APXCoordinator is Ownable {
             ticker,
             info,
             listingInfo
-        );        
+        );
     }
 
     function performAudit(
@@ -144,13 +157,23 @@ contract APXCoordinator is Ownable {
         string memory additionalInfo
     ) external auditorEligibleForAssetType(getAssetByAssetId(assetId).typeId()) {
         IAssetHolder asset = getAssetByAssetId(assetId);
+        address tokenizedAsset = asset.tokenizedAsset();
         Auditor storage auditor = getCallerAuditorByAssetId(assetId);
         require(
             (block.timestamp - asset.getLatestAudit().timestamp) >= auditGapDuration,
             "New audit not yet required."
         );
+        require(
+            stablecoin.balanceOf(tokenizedAsset) >= usdcPerAudit,
+            "Asset balance to low to audit."
+        );
+        stablecoin.safeTransferFrom(tokenizedAsset, msg.sender, usdcPerAudit);
         asset.performAudit(assetValid, additionalInfo);
         auditor.totalAuditsPerformed += 1;
+    }
+
+    function setStablecoin(IERC20 _stablecoin) external {
+        stablecoin = _stablecoin;
     }
 
     function getCallerAuditorByAssetId(uint256 assetId) private view returns (Auditor storage) {
