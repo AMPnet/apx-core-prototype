@@ -4,11 +4,12 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IAssetListHolder.sol";
 import "./AssetHolder.sol";
+import "./shared/Structs.sol";
 
 contract AssetListHolder is Ownable, IAssetListHolder {
 
     address public apxCoordinator;
-    address[] public override assets;
+    AssetDescriptor[] public assetsList;
 
     event AssetHolderCreated(address indexed holderAddress, address indexed tokenizedAssetAddress);
 
@@ -20,7 +21,7 @@ contract AssetListHolder is Ownable, IAssetListHolder {
         _;
     }
 
-    function setCoordinator(address coordinator) external {
+    function setCoordinator(address coordinator) external onlyOwner {
         apxCoordinator = coordinator;
     }
 
@@ -33,7 +34,7 @@ contract AssetListHolder is Ownable, IAssetListHolder {
         string memory info,
         string memory listingInfo
     ) external override onlyApxCoordinator returns (uint256) {
-        uint256 assetId = assets.length;
+        uint256 assetId = assetsList.length;
         AssetHolder assetHolder = new AssetHolder(
             msg.sender,
             tokenizedAsset,
@@ -45,13 +46,24 @@ contract AssetListHolder is Ownable, IAssetListHolder {
             info,
             listingInfo
         );
-        assets.push(address(assetHolder));
+        assetsList.push(AssetDescriptor(
+            address(assetHolder),
+            tokenizedAsset,
+            assetId,
+            assetType,
+            name,
+            ticker
+        ));
         emit AssetHolderCreated(address(assetHolder), tokenizedAsset);
         return assetId;
     }
 
-    function getAssets() external view override returns (address[] memory) {
-        return assets;
+    function getAssets() external view override returns (AssetDescriptor[] memory) {
+        return assetsList;
+    }
+
+    function getAssetById(uint256 id) external view override returns (AssetDescriptor memory) {
+        return assetsList[id];
     }
 
 }

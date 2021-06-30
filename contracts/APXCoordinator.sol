@@ -18,6 +18,8 @@ contract APXCoordinator is Ownable {
     
     // AUDITOR POOLS
     AuditorPool[] public auditorPools;
+    mapping(uint256 => mapping(address => Auditor)) poolMembershipsMapping;
+    mapping(address => uint256[]) public auditorPoolMemeberships;
 
     // ASSETTYPE-TO-POOL HOLDER
     mapping(uint256 => uint256) public assetTypeToPool;
@@ -47,7 +49,7 @@ contract APXCoordinator is Ownable {
     modifier auditorEligibleForAssetType(uint256 typeId) {
         uint256 poolId = assetTypeToPool[typeId];
         AuditorPool storage pool = auditorPools[poolId];
-        Auditor storage auditor = pool.auditors[msg.sender];
+        Auditor storage auditor = poolMembershipsMapping[poolId][msg.sender];
         require(
             pool.active,
             "Pool not active."
@@ -101,7 +103,7 @@ contract APXCoordinator is Ownable {
             "Invalid pool id."
         );
         require(
-            !auditorPools[poolId].auditors[auditorAddress].registered,
+            !poolMembershipsMapping[poolId][auditorAddress].registered,
             "Auditor already member of the pool."
         );
         AuditorPool storage pool = auditorPools[poolId];
@@ -110,11 +112,12 @@ contract APXCoordinator is Ownable {
         auditorHolder.info = auditorInfo;
         auditorHolder.registered = true;
         auditorHolder.active = true;
-        pool.auditors[auditorAddress] = auditorHolder;
+        poolMembershipsMapping[poolId][auditorAddress] = auditorHolder;
         if (pool.auditorsList.length > 0) {
             pool.active = true;
         }
         pool.activeMembers += 1;
+        auditorPoolMemeberships[auditorAddress].push(poolId);
         return true;
     }
 
@@ -176,14 +179,23 @@ contract APXCoordinator is Ownable {
         stablecoin = _stablecoin;
     }
 
+    function getPoolMemberships(address auditor) external view returns (uint256[] memory) {
+        return auditorPoolMemeberships[auditor];
+    }
+
+    function getPools() external view returns (AuditorPool[] memory) {
+        return auditorPools;
+    }
+
     function getCallerAuditorByAssetId(uint256 assetId) private view returns (Auditor storage) {
-        return auditorPools[
+        uint256 poolId = auditorPools[
             getAssetByAssetId(assetId).typeId()
-        ].auditors[msg.sender];
+        ].id;
+        return poolMembershipsMapping[poolId][msg.sender];
     }
 
     function getAssetByAssetId(uint256 assetId) private view returns (IAssetHolder) {
-        return IAssetHolder(IAssetListHolder(assetListHolder).assets(assetId));
+        return IAssetHolder(IAssetListHolder(assetListHolder).getAssetById(assetId).assetHolder);
     }
 
 }

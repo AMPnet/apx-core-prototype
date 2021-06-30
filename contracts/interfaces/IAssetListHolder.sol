@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "../shared/Structs.sol";
+
 interface IAssetListHolder {
     function addAsset(
         address tokenizedAsset,
@@ -11,6 +13,6 @@ interface IAssetListHolder {
         string memory info,
         string memory listingInfo
     ) external returns (uint256);
-    function assets(uint256 index) external view returns (address);
-    function getAssets() external returns (address[] memory);
+    function getAssets() external view returns (AssetDescriptor[] memory);
+    function getAssetById(uint256 id) external view returns (AssetDescriptor memory);
 }

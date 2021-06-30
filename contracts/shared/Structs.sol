@@ -7,6 +7,15 @@ struct AssetType {
     string info;
 }
 
+struct AssetDescriptor {
+    address assetHolder;
+    address tokenizedAsset;
+    uint256 id;
+    uint256 typeId;
+    string name;
+    string ticker;
+}
+
 struct AuditorPool {
     uint256 id;
     string name;
@@ -14,7 +23,6 @@ struct AuditorPool {
     bool active;
     uint256 activeMembers;
     Auditor[] auditorsList;
-    mapping(address => Auditor) auditors;
 }
 
 struct Auditor {

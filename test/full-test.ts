@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { Contract, ContractFactory, Signer } from "ethers";
+import { Contract, Signer } from "ethers";
 import { expect } from "chai";
 import * as helpers from "../util/helpers";
 
@@ -48,13 +48,18 @@ describe("Full test", function () {
             await usdc.approve(tokenizedAsset.address, tokenizedAssetFunds);
             await tokenizedAsset.fundWallet(usdc.address, tokenizedAssetFunds, apxCoordinator.address);
             
+            const assetName = "Mirrored Tokenized asset";
+            const assetTicker = "MTA";
+            const assetInfo = "info-ipfs-hash";
+            const assetListingInfo = "listing-info-ipfs-hash";
+            const assetTypeId = 0;
             await apxCoordinator.connect(auditor).listAsset(
                 tokenizedAsset.address,
-                0,
-                "Mirrored Tokenized asset",
-                "MTA",
-                "info-ipfs-hash",
-                "listing-info-ipfs-hash"
+                assetTypeId,
+                assetName,
+                assetTicker,
+                assetInfo,
+                assetListingInfo
             );
             await apxCoordinator.connect(auditor).performAudit(
                 0, true, "auditing-info-ipfs-hash"
@@ -63,7 +68,14 @@ describe("Full test", function () {
             const assets = await assetsList.getAssets();
             expect(assets).to.have.lengthOf(1);
 
-            const asset = await ethers.getContractAt("AssetHolder", (await assetsList.assets(0)));
+            const assetDescriptor = await assetsList.getAssetById(0);
+            expect(assetDescriptor.tokenizedAsset).to.be.equal(tokenizedAsset.address);
+            expect(assetDescriptor.id).to.be.equal(0);
+            expect(assetDescriptor.typeId).to.be.equal(assetTypeId);
+            expect(assetDescriptor.name).to.be.equal(assetName);
+            expect(assetDescriptor.ticker).to.be.equal(assetTicker);
+
+            const asset = await ethers.getContractAt("AssetHolder", assetDescriptor.assetHolder);
             const latestAudit = await asset.getLatestAudit();
             expect(latestAudit.assetVerified).to.be.true;
 
