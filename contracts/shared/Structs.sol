@@ -22,19 +22,12 @@ struct AuditorPool {
     string info;
     bool active;
     uint256 activeMembers;
-    Auditor[] auditorsList;
 }
 
 struct Auditor {
     address auditor;
     uint256 totalAuditsPerformed;
-    uint256 totalAuditsCharged;
     uint256 totalListingsPerformed;
-    uint256 totalListingsCharged;
-    uint256 totalEscalationsInitiated;
-    uint256 totalEscalationsHandled;
-    bool registered;
-    bool active;
     string info;
 }
     

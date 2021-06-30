@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { Contract, Signer } from "ethers";
+import { BigNumber, Contract, Signer } from "ethers";
 import { expect } from "chai";
 import * as helpers from "../util/helpers";
 
@@ -36,12 +36,14 @@ describe("Full test", function () {
                 1
             );
             const auditorAddress = await auditor.getAddress();
-        
+            const auditorInfoIpfs = "auditor-info-ipfs-hash";
+            const poolName = "Berlin Real Estate - 1";
+            const poolInfoHash = "ipfs-hash";
             await assetListHolder.setCoordinator(apxCoordinator.address);
             await apxCoordinator.setStablecoin(usdc.address);
-            await apxCoordinator.createNewAuditorPool("Berlin Real Estate - 1", "ipfs-hash");
+            await apxCoordinator.createNewAuditorPool(poolName, poolInfoHash);
             await apxCoordinator.createNewAssetType("Berlin Real Estate - 1", "ipfs-hash");
-            await apxCoordinator.addAuditorToPool(0, auditorAddress, "auditor-info-ipfs-hash");
+            await apxCoordinator.addAuditorToPool(0, auditorAddress, auditorInfoIpfs);
             await apxCoordinator.assignAssetTypeToPool(0, 0);
 
             const tokenizedAssetFunds = ethers.utils.parseEther("20");
@@ -64,6 +66,7 @@ describe("Full test", function () {
             await apxCoordinator.connect(auditor).performAudit(
                 0, true, "auditing-info-ipfs-hash"
             );
+
             const assetsList = await ethers.getContractAt("AssetListHolder", (await apxCoordinator.assetListHolder()));            
             const assets = await assetsList.getAssets();
             expect(assets).to.have.lengthOf(1);
@@ -78,14 +81,36 @@ describe("Full test", function () {
             const asset = await ethers.getContractAt("AssetHolder", assetDescriptor.assetHolder);
             const latestAudit = await asset.getLatestAudit();
             expect(latestAudit.assetVerified).to.be.true;
-
             const listedBy = await asset.listedBy();
             expect(listedBy).to.be.equal(auditorAddress);
             
-            const pool = await apxCoordinator.auditorPools(0);
+            const pools = await apxCoordinator.getPools();
+            expect(pools).to.have.lengthOf(1);
+            
+            const pool = await apxCoordinator.getPoolById(0);
             expect(pool.id).to.be.equal(0);
+            expect(pool.name).to.be.equal(poolName);
+            expect(pool.info).to.be.equal(poolInfoHash);
             expect(pool.active).to.be.true;
             expect(pool.activeMembers).to.be.equal(1);
+
+            const poolMembers = await apxCoordinator.getPoolMembers(0);
+            expect(poolMembers).to.have.lengthOf(1);
+            
+            const poolMember = poolMembers[0];
+            expect(poolMember.auditor).to.be.equal(auditorAddress);
+            expect(poolMember.totalAuditsPerformed).to.be.equal(1);
+            expect(poolMember.totalListingsPerformed).to.be.equal(1);
+            expect(poolMember.info).to.be.equal(auditorInfoIpfs);
+            
+            const poolMemberRegistered = await apxCoordinator.poolRegisteredAuditorsMapping(pool.id, auditorAddress);
+            const poolMemberActive = await apxCoordinator.poolActiveAuditorsMapping(pool.id, auditorAddress);
+            expect(poolMemberRegistered).to.be.true;
+            expect(poolMemberActive).to.be.true;
+
+            const poolMemberships = await apxCoordinator.getPoolMemberships(auditorAddress);
+            expect(poolMemberships).to.have.lengthOf(1);
+            expect(poolMemberships[0]).to.be.equal(0);
 
             const sharesToMirror = ethers.utils.parseEther("1");
             await tokenizedAsset.connect(deployer).approve(asset.address, sharesToMirror);
