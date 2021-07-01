@@ -2,5 +2,6 @@
 pragma solidity ^0.8.0;
 
 interface IAPXCoordinator {
-    function auditor() external view returns (address);
+    function calcualteTransferFee(uint256 transferAmount) external view returns (uint256);
+    function protocolFeeBeneficiary() external view returns (address);
 }

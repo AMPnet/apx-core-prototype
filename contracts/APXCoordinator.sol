@@ -7,9 +7,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IAssetListHolder.sol";
 import "./interfaces/IAssetHolder.sol";
 import "./interfaces/IAuditorPool.sol";
+import "./interfaces/IAPXCoordinator.sol";
 import "./shared/Structs.sol";
 
-contract APXCoordinator is Ownable {
+contract APXCoordinator is Ownable, IAPXCoordinator {
     using SafeERC20 for IERC20;
 
     // ASSET TYPES
@@ -31,10 +32,12 @@ contract APXCoordinator is Ownable {
 
     // PROTOCOL PROPERTIES
     IERC20 public stablecoin;
+    address public override protocolFeeBeneficiary;
     uint256 public auditGapDuration;
     uint256 public usdcPerAudit = 10 * (10**18);
     uint256 public usdcPerList = 10 * (10**18);
-    uint256 public protocolFeePercentage = 3;
+    uint256 public protocolFeePermyriad;
+    uint256 constant myriad = 10000;
 
     event AssetListed(address indexed tokenizedAsset);
 
@@ -168,8 +171,16 @@ contract APXCoordinator is Ownable {
         auditor.totalAuditsPerformed += 1;
     }
 
-    function setStablecoin(IERC20 _stablecoin) external {
+    function setStablecoin(IERC20 _stablecoin) external onlyOwner {
         stablecoin = _stablecoin;
+    }
+
+    function setProtocolFeeBeneficiary(address beneficiary) external onlyOwner {
+        protocolFeeBeneficiary = beneficiary;
+    }
+
+    function setProtocolFee(uint256 feePermyriad) external onlyOwner {
+        protocolFeePermyriad = feePermyriad;
     }
 
     function getPoolMemberships(address auditor) external view returns (uint256[] memory) {
@@ -203,6 +214,10 @@ contract APXCoordinator is Ownable {
 
     function getAssetByAssetId(uint256 assetId) private view returns (IAssetHolder) {
         return IAssetHolder(IAssetListHolder(assetListHolder).getAssetById(assetId).assetHolder);
+    }
+
+    function calcualteTransferFee(uint256 transferAmount) external view override returns (uint256) {
+        return transferAmount * protocolFeePermyriad / myriad;
     }
 
 }

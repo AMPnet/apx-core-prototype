@@ -3,13 +3,14 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "./interfaces/IAssetHolder.sol";
 import { AuditResult } from "./shared/Structs.sol";
+import "./interfaces/IAssetHolder.sol";
+import "./interfaces/IAPXCoordinator.sol";
 
 contract AssetHolder is IAssetHolder, ERC20 {
     using SafeERC20 for IERC20;
 
-    address public apxCoordinator;
+    IAPXCoordinator public apxCoordinator;
     uint256 public override id;
     uint256 public override typeId;
     string public info;
@@ -20,7 +21,7 @@ contract AssetHolder is IAssetHolder, ERC20 {
 
     modifier onlyApxCoordinator() {
         require(
-            msg.sender == apxCoordinator,
+            msg.sender == address(apxCoordinator),
             "Only Coordinator Contract can execute this call."
         );
         _;
@@ -39,7 +40,7 @@ contract AssetHolder is IAssetHolder, ERC20 {
         string memory _info,
         string memory _listingInfo
     ) ERC20(_name, _ticker) {
-        apxCoordinator = _apxCoordinator;
+        apxCoordinator = IAPXCoordinator(_apxCoordinator);
         id = _id;
         typeId = _typeId;
         info = _info;
@@ -65,6 +66,13 @@ contract AssetHolder is IAssetHolder, ERC20 {
 
     function getLatestAudit() external override view returns (AuditResult memory) {
         return latestAudit;    
+    }
+
+    function _transfer(address sender, address recipient, uint256 amount) internal override {
+        uint256 totalFee = apxCoordinator.calcualteTransferFee(amount);
+        uint256 reducedAmount = amount - totalFee;
+        super._transfer(sender, recipient, reducedAmount);
+        super._transfer(sender, apxCoordinator.protocolFeeBeneficiary(), totalFee);
     }
 
 }
